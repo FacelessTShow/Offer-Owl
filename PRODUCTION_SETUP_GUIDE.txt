@@ -1,0 +1,744 @@
+PRICETRACKER PRO - PRODUCTION SETUP GUIDE
+==========================================
+
+This guide contains all the steps you need to configure APIs, keys, and deploy your price comparison app to production.
+
+📋 TABLE OF CONTENTS
+====================
+1. Environment Variables & API Keys
+2. Push Notifications Setup
+3. Firebase Configuration  
+4. Apple App Store Setup
+5. Google Play Store Setup
+6. Backend API Configuration
+7. Third-Party Services Setup
+8. Security & Authentication
+9. Database Setup
+10. Analytics & Monitoring
+11. Testing & Quality Assurance
+12. Deployment Checklist
+13. Post-Launch Monitoring
+
+🔑 1. ENVIRONMENT VARIABLES & API KEYS
+======================================
+
+Create a .env file in your project root with the following variables:
+
+# Expo Configuration
+EXPO_PUBLIC_PROJECT_ID=your-expo-project-id
+EXPO_PUBLIC_ENVIRONMENT=production
+
+# API Configuration
+EXPO_PUBLIC_API_BASE_URL=https://your-api-domain.com/api
+EXPO_PUBLIC_WS_URL=wss://your-api-domain.com/ws
+
+# Firebase Configuration
+EXPO_PUBLIC_FIREBASE_API_KEY=your-firebase-api-key
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=your-firebase-project-id
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
+EXPO_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abcdef123456
+
+# Push Notifications
+EXPO_PUSH_TOKEN=your-expo-push-token
+
+# Social Authentication
+EXPO_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
+EXPO_PUBLIC_APPLE_CLIENT_ID=your-apple-client-id
+
+# Third-Party APIs
+AMAZON_ACCESS_KEY=your-amazon-access-key
+AMAZON_SECRET_KEY=your-amazon-secret-key
+AMAZON_ASSOCIATE_TAG=your-associate-tag
+
+WALMART_API_KEY=your-walmart-api-key
+EBAY_CLIENT_ID=your-ebay-client-id
+EBAY_CLIENT_SECRET=your-ebay-client-secret
+
+# Brazilian Retailers
+MERCADO_LIVRE_CLIENT_ID=your-ml-client-id
+MERCADO_LIVRE_CLIENT_SECRET=your-ml-client-secret
+MAGAZINE_LUIZA_API_KEY=your-magazine-luiza-key
+KABUM_API_KEY=your-kabum-api-key
+
+# Analytics
+GOOGLE_ANALYTICS_ID=your-ga-tracking-id
+MIXPANEL_TOKEN=your-mixpanel-token
+
+# Error Tracking
+SENTRY_DSN=your-sentry-dsn
+
+📱 2. PUSH NOTIFICATIONS SETUP
+===============================
+
+A. Apple Push Notification Service (APNs)
+------------------------------------------
+1. Go to Apple Developer Console (developer.apple.com)
+2. Navigate to "Certificates, Identifiers & Profiles"
+3. Create a new APNs Auth Key:
+   - Click "Keys" → "+"
+   - Select "Apple Push Notifications service (APNs)"
+   - Download the .p8 file
+   - Note the Key ID and Team ID
+
+4. Configure in your backend:
+   APNS_KEY_ID=your-key-id-here
+   APNS_TEAM_ID=your-team-id-here
+   APNS_PRIVATE_KEY=path/to/your/AuthKey_KEYID.p8
+   APNS_ENVIRONMENT=production
+
+B. Firebase Cloud Messaging (FCM)
+----------------------------------
+1. Go to Firebase Console (console.firebase.google.com)
+2. Create/Select your project
+3. Navigate to Project Settings → Cloud Messaging
+4. Generate a new private key for service account
+5. Download the JSON file
+6. Configure in your backend:
+   FIREBASE_SERVICE_ACCOUNT_PATH=path/to/service-account.json
+
+C. Expo Push Notifications
+---------------------------
+1. Run: expo build:ios or expo build:android
+2. Your push notification credentials will be automatically configured
+3. For EAS Build: expo credentials:manager
+
+🔥 3. FIREBASE CONFIGURATION
+=============================
+
+A. Create Firebase Project
+---------------------------
+1. Go to console.firebase.google.com
+2. Click "Add project"
+3. Enter project name: "pricetracker-pro"
+4. Enable Google Analytics (recommended)
+5. Choose analytics account
+
+B. Enable Authentication
+------------------------
+1. Go to Authentication → Sign-in method
+2. Enable the following providers:
+   - Email/Password
+   - Google
+   - Apple (iOS only)
+3. Configure authorized domains
+
+C. Setup Firestore Database
+----------------------------
+1. Go to Firestore Database
+2. Create database in production mode
+3. Set up security rules:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read/write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Public product data
+    match /products/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Bug reports
+    match /bug_reports/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
+
+D. Setup Cloud Storage
+-----------------------
+1. Go to Storage
+2. Set up security rules for user uploads
+3. Create buckets for:
+   - Profile images: /users/{userId}/profile/
+   - Bug report attachments: /bug_reports/{reportId}/
+   - Product images: /products/images/
+
+🍎 4. APPLE APP STORE SETUP
+============================
+
+A. Apple Developer Account
+---------------------------
+1. Enroll in Apple Developer Program ($99/year)
+2. Create App ID in Developer Console
+3. Bundle Identifier: com.yourcompany.pricetrackerpro
+
+B. App Store Connect
+--------------------
+1. Create new app in App Store Connect
+2. Fill out app information:
+   - Name: "PriceTracker Pro"
+   - Category: Shopping
+   - Content Rating: 4+
+   - Privacy Policy URL: https://yoursite.com/privacy
+   - Support URL: https://yoursite.com/support
+
+C. App Store Metadata
+----------------------
+Screenshots (Required sizes):
+- iPhone 6.7": 1290x2796 (3 screenshots minimum)
+- iPhone 6.5": 1242x2688
+- iPhone 5.5": 1242x2208  
+- iPad Pro (6th gen): 2048x2732
+- iPad Pro (12.9" 2nd gen): 2048x2732
+
+App Description:
+"Compare prices from top retailers instantly! PriceTracker Pro helps you find the best deals across Amazon, Walmart, eBay and more. Get price alerts, share deals with friends, and save money on every purchase."
+
+Keywords: 
+"price comparison, shopping, deals, discounts, save money, price alerts, walmart, amazon, ebay, shopping app"
+
+D. In-App Purchases (if needed)
+-------------------------------
+1. Create in-app purchase products
+2. Set up StoreKit configuration
+3. Test with sandbox users
+
+🤖 5. GOOGLE PLAY STORE SETUP
+==============================
+
+A. Google Play Console
+-----------------------
+1. Create Developer Account ($25 one-time fee)
+2. Create new application
+3. Package name: com.yourcompany.pricetrackerpro
+
+B. App Bundle & APK
+-------------------
+1. Generate signed APK/AAB:
+   expo build:android --type=app-bundle
+2. Upload to Play Console
+3. Configure release tracks (Internal → Alpha → Beta → Production)
+
+C. Store Listing
+----------------
+Short Description (80 chars):
+"Compare prices instantly across top retailers. Find deals, save money!"
+
+Full Description:
+"🛍️ PriceTracker Pro - Your Ultimate Shopping Companion
+
+Compare prices from hundreds of retailers including Amazon, Walmart, eBay, and more! Never overpay again with real-time price tracking and instant deal alerts.
+
+✨ KEY FEATURES:
+• Compare prices across 20+ major retailers
+• Real-time price drop alerts
+• Barcode & image search
+• Share deals with friends
+• Gamification & rewards
+• Voice search capability
+• Price history tracking
+• Wishlist & favorites
+
+🏆 SAVE MORE, SHOP SMARTER:
+• Get notified when prices drop
+• Track price history for better buying decisions
+• Earn points and unlock achievements
+• Share great deals with your network
+
+📱 SMART SEARCH:
+• Scan barcodes instantly
+• Take photos to find products
+• Voice search for hands-free shopping
+• Multi-language support (English/Portuguese)
+
+Start saving money today! Download PriceTracker Pro and join thousands of smart shoppers."
+
+Graphics:
+- High-res icon: 512x512
+- Feature graphic: 1024x500
+- Screenshots: 1080x1920 (phone), 1200x1920 (7" tablet), 1600x2560 (10" tablet)
+
+🔧 6. BACKEND API CONFIGURATION
+================================
+
+A. Server Setup
+---------------
+Choose hosting provider:
+- AWS EC2/ECS
+- Google Cloud Platform
+- Heroku
+- DigitalOcean
+- Vercel (for serverless)
+
+B. Database Configuration
+-------------------------
+MongoDB Atlas Setup:
+1. Create cluster at mongodb.com/cloud/atlas
+2. Configure network access (whitelist IPs)
+3. Create database user
+4. Get connection string:
+   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/pricetracker
+
+Redis Setup (for caching):
+1. Redis Cloud or AWS ElastiCache
+2. Configure connection:
+   REDIS_URL=redis://username:password@host:port
+
+C. API Endpoints Structure
+--------------------------
+Base URL: https://api.pricetrackerpro.com
+
+Authentication:
+POST /api/auth/login
+POST /api/auth/signup
+POST /api/auth/logout
+POST /api/auth/refresh
+GET  /api/auth/me
+
+Products:
+GET  /api/products/search
+GET  /api/products/:id
+POST /api/products/track
+GET  /api/products/tracked
+
+Price Alerts:
+GET  /api/alerts
+POST /api/alerts
+PUT  /api/alerts/:id
+DELETE /api/alerts/:id
+
+Bug Reports:
+POST /api/bug-reports
+GET  /api/bug-reports
+PUT  /api/bug-reports/:id
+
+Gamification:
+GET  /api/gamification/profile
+POST /api/gamification/actions
+GET  /api/gamification/leaderboard
+
+Push Notifications:
+POST /api/push-notifications/send
+POST /api/push-notifications/register
+POST /api/push-notifications/remove-token
+
+🔗 7. THIRD-PARTY SERVICES SETUP
+=================================
+
+A. Amazon Product Advertising API
+----------------------------------
+1. Apply for Product Advertising API access
+2. Create associate account
+3. Get access keys:
+   - Access Key ID
+   - Secret Access Key
+   - Associate Tag
+
+Documentation: https://webservices.amazon.com/paapi5/documentation/
+
+B. Walmart API
+---------------
+1. Register at developer.walmart.com
+2. Create application
+3. Get API key
+4. Rate limits: 5 calls/second
+
+C. eBay API
+-----------
+1. Register at developer.ebay.com
+2. Create application
+3. Get Client ID and Secret
+4. Implement OAuth 2.0
+
+D. Brazilian Retailers
+----------------------
+MercadoLibre API:
+1. Register at developers.mercadolibre.com
+2. Create application
+3. Implement OAuth flow
+
+Magazine Luiza:
+- Contact: desenvolvedores@magazineluiza.com.br
+- API documentation: Request access
+
+KaBuM:
+- Contact their developer team
+- B2B API access required
+
+E. Price Tracking Services
+---------------------------
+PriceAPI:
+- Sign up at priceapi.com
+- Get API key
+- Plans start at $49/month
+
+Keepa API:
+- Register at keepa.com/#!api
+- Amazon price history
+- €39/month for 1M requests
+
+🔐 8. SECURITY & AUTHENTICATION
+================================
+
+A. JWT Configuration
+--------------------
+```javascript
+JWT_SECRET=your-super-secure-secret-key-here
+JWT_EXPIRES_IN=24h
+JWT_REFRESH_EXPIRES_IN=7d
+```
+
+B. OAuth Setup
+---------------
+Google OAuth:
+1. Go to console.developers.google.com
+2. Create project and enable Google+ API
+3. Create OAuth 2.0 credentials
+4. Add authorized redirect URIs
+
+Apple Sign-In:
+1. Enable in Apple Developer portal
+2. Configure in Xcode project
+3. Add Sign in with Apple capability
+
+C. Security Headers
+-------------------
+Configure in your backend:
+- CORS policies
+- Rate limiting
+- Request validation
+- SQL injection prevention
+- XSS protection
+
+D. Data Encryption
+------------------
+- Encrypt sensitive user data
+- Use HTTPS everywhere
+- Implement proper password hashing (bcrypt)
+- Secure API key storage
+
+🗄️ 9. DATABASE SETUP
+=====================
+
+A. MongoDB Collections
+-----------------------
+Users Collection:
+```javascript
+{
+  _id: ObjectId,
+  email: String,
+  name: String,
+  avatar: String,
+  preferences: {
+    currency: String,
+    language: String,
+    notifications: Object
+  },
+  gamification: {
+    points: Number,
+    level: Number,
+    achievements: Array
+  },
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+Products Collection:
+```javascript
+{
+  _id: ObjectId,
+  name: String,
+  brand: String,
+  category: String,
+  description: String,
+  images: Array,
+  prices: [{
+    retailer: String,
+    price: Number,
+    currency: String,
+    url: String,
+    lastUpdated: Date
+  }],
+  priceHistory: Array,
+  createdAt: Date
+}
+```
+
+Price Alerts Collection:
+```javascript
+{
+  _id: ObjectId,
+  userId: ObjectId,
+  productId: ObjectId,
+  targetPrice: Number,
+  isActive: Boolean,
+  createdAt: Date
+}
+```
+
+B. Database Indexes
+-------------------
+Create indexes for performance:
+```javascript
+// Users
+db.users.createIndex({ email: 1 }, { unique: true })
+
+// Products
+db.products.createIndex({ name: "text", brand: "text" })
+db.products.createIndex({ category: 1 })
+db.products.createIndex({ "prices.retailer": 1 })
+
+// Price Alerts
+db.priceAlerts.createIndex({ userId: 1 })
+db.priceAlerts.createIndex({ productId: 1 })
+```
+
+📊 10. ANALYTICS & MONITORING
+==============================
+
+A. Google Analytics 4
+----------------------
+1. Create GA4 property
+2. Install gtag library
+3. Track key events:
+   - Product searches
+   - Price comparisons
+   - Deal shares
+   - User signups
+   - Purchase completions
+
+B. Mixpanel Setup
+-----------------
+1. Create project at mixpanel.com
+2. Get project token
+3. Track custom events:
+   - App launches
+   - Feature usage
+   - User journey
+   - Gamification actions
+
+C. Error Monitoring (Sentry)
+-----------------------------
+1. Create project at sentry.io
+2. Install Sentry SDK
+3. Configure error tracking:
+```javascript
+import * as Sentry from "@sentry/react-native";
+
+Sentry.init({
+  dsn: "YOUR_SENTRY_DSN",
+});
+```
+
+D. Performance Monitoring
+--------------------------
+- App performance metrics
+- API response times
+- Crash reporting
+- User experience monitoring
+
+🧪 11. TESTING & QUALITY ASSURANCE
+===================================
+
+A. Testing Checklist
+---------------------
+□ Unit tests for core functions
+□ Integration tests for APIs
+□ E2E tests for critical user flows
+□ Performance testing
+□ Security testing
+□ Accessibility testing
+
+B. Device Testing
+-----------------
+iOS Devices:
+□ iPhone 15 Pro Max
+□ iPhone 15
+□ iPhone 14
+□ iPhone SE (3rd generation)
+□ iPad Pro
+□ iPad Air
+
+Android Devices:
+□ Samsung Galaxy S24
+□ Google Pixel 8
+□ OnePlus 12
+□ Xiaomi phones
+□ Various screen sizes
+
+C. Beta Testing
+---------------
+TestFlight (iOS):
+1. Upload build to App Store Connect
+2. Add beta testers
+3. Collect feedback
+
+Google Play Console (Android):
+1. Create internal testing track
+2. Add testers via email
+3. Promote to closed/open testing
+
+🚀 12. DEPLOYMENT CHECKLIST
+============================
+
+Pre-Deployment:
+□ Update app version numbers
+□ Remove debug logs
+□ Enable production mode
+□ Test on physical devices
+□ Verify all API endpoints
+□ Check push notifications
+□ Validate in-app purchases
+□ Review app store metadata
+□ Prepare release notes
+
+iOS Deployment:
+□ Archive and upload to App Store Connect
+□ Submit for App Store Review
+□ Respond to review feedback if needed
+□ Release to App Store
+
+Android Deployment:
+□ Generate signed AAB
+□ Upload to Google Play Console
+□ Set rollout percentage (start with 10%)
+□ Monitor crash reports
+□ Gradually increase rollout
+
+Post-Deployment:
+□ Monitor user feedback
+□ Watch analytics dashboards
+□ Check error rates
+□ Update documentation
+□ Plan next iteration
+
+📈 13. POST-LAUNCH MONITORING
+=============================
+
+A. Key Metrics to Track
+-----------------------
+User Metrics:
+- Daily/Monthly Active Users
+- User retention rates
+- Session duration
+- User engagement
+
+Business Metrics:
+- Conversion rates
+- Revenue per user
+- Cost per acquisition
+- Lifetime value
+
+Technical Metrics:
+- App crash rates
+- API response times
+- Error rates
+- Performance metrics
+
+B. Monitoring Tools
+-------------------
+App Store Connect:
+- Sales and trends
+- App analytics
+- Crash reports
+- User reviews
+
+Google Play Console:
+- User acquisition
+- User behavior
+- Technical performance
+- Store listing experiments
+
+Firebase Analytics:
+- Real-time users
+- Event tracking
+- Conversion funnels
+- Audience insights
+
+C. Maintenance Schedule
+-----------------------
+Daily:
+□ Check error logs
+□ Monitor user feedback
+□ Review crash reports
+
+Weekly:
+□ Analyze user metrics
+□ Update price data
+□ Check API status
+□ Review performance
+
+Monthly:
+□ Plan feature updates
+□ Analyze competitors
+□ Review financial metrics
+□ Update content
+
+🔄 14. CONTINUOUS IMPROVEMENT
+=============================
+
+A. Feature Updates
+------------------
+- Plan monthly feature releases
+- A/B test new features
+- Gather user feedback
+- Iterate based on data
+
+B. Performance Optimization
+---------------------------
+- Monitor app performance
+- Optimize images and assets
+- Improve loading times
+- Reduce memory usage
+
+C. User Experience
+------------------
+- Regular UX audits
+- User research sessions
+- Accessibility improvements
+- Localization updates
+
+📞 SUPPORT & RESOURCES
+======================
+
+Official Documentation:
+- Expo: docs.expo.dev
+- React Native: reactnative.dev
+- Firebase: firebase.google.com/docs
+
+Community:
+- Expo Discord
+- React Native Community
+- Stack Overflow
+- GitHub Issues
+
+Support Contacts:
+- Technical Support: tech@pricetrackerpro.com
+- Business Inquiries: business@pricetrackerpro.com
+- Bug Reports: bugs@pricetrackerpro.com
+
+🏁 FINAL CHECKLIST
+==================
+
+Before Going Live:
+□ All environment variables configured
+□ Push notifications tested
+□ Payment systems verified
+□ Privacy policy published
+□ Terms of service updated
+□ Support documentation ready
+□ Marketing materials prepared
+□ App store assets uploaded
+□ Beta testing completed
+□ Performance testing passed
+□ Security audit completed
+□ Backup systems in place
+□ Monitoring systems active
+□ Team training completed
+
+Congratulations! Your PriceTracker Pro app is ready for production! 🎉
+
+Remember to keep this guide updated as you make changes to your app and infrastructure.
+
+Last Updated: January 2024
+Version: 1.0.0
